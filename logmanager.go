@@ -2,18 +2,10 @@ package logging
 
 import "sync"
 
-// LogFinder defines methods for finding named loggers.
-// All methods should be safe for concurrent use.
-type LogFinder interface {
-	// GetLogger returns the Logger instance with the specific name.
-	// If the name does not exist, returns nil.
-	GetLogger(name string) Logger
-}
-
 // DefaultManager is the globally shared LogManager.
 var DefaultManager *LogManager = new(LogManager)
 
-// LogManager is a simple implementation of LogFinder.
+// LogManager is a simple implementation of LogFinder, which can be used to manage Loggers.
 // It is safe for concurrent use.
 type LogManager struct {
 	loggers sync.Map
@@ -26,9 +18,9 @@ func NewManager() *LogManager {
 
 var _ LogFinder = (*LogManager)(nil)
 
-// GetLogger returns the Logger instance with the specific name.
+// Find returns the Logger instance with the specific name.
 // If the name does not exist, returns nil.
-func (m *LogManager) GetLogger(name string) Logger {
+func (m *LogManager) Find(name string) Logger {
 	if l, ok := m.loggers.Load(name); ok {
 		return l.(Logger)
 	}
