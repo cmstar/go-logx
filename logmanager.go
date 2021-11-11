@@ -29,7 +29,7 @@ type LogManager struct {
 // loggerNode is a node in the tree that stores Loggers.
 // Each node stores a segment of a logger name. The root node stores no logger.
 //
-// e.g., there are Loggers with name 'a.b', 'a.d', 'a.b.c', '.x.y', they will be store in the tree like:
+// e.g., there are Loggers with name 'a.b', 'a.d', 'a.b.c', '.x.y', they will be stored in the tree like:
 //   root{ segment: '', logger: nil }
 //     |- node{ segment: 'a', logger: nil }
 //     |    |- node{ segment: 'b', logger: of('a.b') }
@@ -68,7 +68,7 @@ func (m *LogManager) Find(name string) Logger {
 	return lastNonNil.logger
 }
 
-// Set register a named logger to the current LogManager.
+// Set registers a named logger to the current LogManager.
 // If a logger with the name already exists, it will be replaced.
 func (m *LogManager) Set(name string, logger Logger) {
 	m.mu.Lock()
