@@ -32,15 +32,17 @@ func (logger *StdLogger) Log(level Level, message string, keyValues ...interface
 	builder.WriteByte(' ')
 	builder.WriteString(message)
 
-	// If key-values are unpaired, drop the last key.
 	length := len(keyValues)
-	if length%2 != 0 {
-		length -= 1
-	}
-	for i := 0; i < length; i += 2 {
-		segment := fmt.Sprintf("%v=%v", keyValues[i], keyValues[i+1])
-		builder.WriteByte(' ')
-		builder.WriteString(segment)
+	if length > 0 {
+		for i := 0; i < length-1; i += 2 {
+			segment := fmt.Sprintf(" %v=%v", keyValues[i], keyValues[i+1])
+			builder.WriteString(segment)
+		}
+
+		if length%2 != 0 {
+			segment := fmt.Sprintf(" UNKNOWN=%v", keyValues[length-1])
+			builder.WriteString(segment)
+		}
 	}
 
 	underlyingLogger := logger.UnderlyingLogger

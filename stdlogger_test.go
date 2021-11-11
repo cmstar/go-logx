@@ -11,9 +11,7 @@ import (
 func TestStdLogger(t *testing.T) {
 	buf := new(bytes.Buffer)
 	underlyingLogger := log.New(buf, "", 0)
-	stdLogger := StdLogger{
-		UnderlyingLogger: underlyingLogger,
-	}
+	stdLogger := NewStdLogger(underlyingLogger)
 
 	type args struct {
 		level     Level
@@ -48,6 +46,17 @@ func TestStdLogger(t *testing.T) {
 				"k2", "v2",
 			},
 			want: "WARN msg k1=1 k2=v2\n",
+		}},
+
+		{"keyvalue-odd", args{
+			level:   LevelWarn,
+			message: "msg",
+			keyValues: []interface{}{
+				"k1", 1,
+				"k2", "v2",
+				"v3",
+			},
+			want: "WARN msg k1=1 k2=v2 UNKNOWN=v3\n",
 		}},
 	}
 	for _, tt := range tests {

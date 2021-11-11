@@ -4,6 +4,7 @@ package logging
 import "strings"
 
 // Level defines the log level.
+// If level A is lower than B, the interger value of A should be less than B.
 type Level int8
 
 const (
@@ -62,12 +63,11 @@ type Logger interface {
 	// A log message can contain couples of key-value pairs to extend the message.
 	// The elements at even indexes of keyValues are the keys; the odd indexes are the values.
 	//
-	// If a key is given more than once, the first one is to be taken, the others are dropped.
-	// If the keys and values are unpaired, the last key should be dropped.
+	// If the keys and values are unpaired, the last element should be treated as a value with key 'UNKNOWN'.
 	//
 	Log(level Level, message string, keyValues ...interface{}) error
 
-	// LogFn is similar to the Log function, but generates the log message with a function.
+	// LogFn is similar to the Log function, but generates the log mesage with a function.
 	// It is useful when the generation of log messages is expensive.
 	//
 	// If messageFactory panics, it will not be handled.
