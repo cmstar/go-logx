@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 )
 
 // StdLogger sends all log messages to the UnderlyingLogger which is a Logger of the standard library.
@@ -16,15 +17,22 @@ type StdLogger struct {
 	// UnderlyingLogger receives formatted log messages.
 	// If it is nil, log.Default() will be used.
 	UnderlyingLogger *log.Logger
+
+	mu sync.Mutex
 }
 
 // NewStdLogger creates a new StdLogger with the given underlyingLogger, which is used to receive
 // log messages. If underlyingLogger is nil, log messages are sent to log.Default().
 func NewStdLogger(underlyingLogger *log.Logger) Logger {
-	return &StdLogger{underlyingLogger}
+	return &StdLogger{
+		UnderlyingLogger: underlyingLogger,
+	}
 }
 
 func (logger *StdLogger) Log(level Level, message string, keyValues ...interface{}) error {
+	logger.mu.Lock()
+	defer logger.mu.Unlock()
+
 	builder := new(strings.Builder)
 
 	// Format: LEVEL MESSAGE KEY=VALUE KEY=VALUE

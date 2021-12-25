@@ -72,7 +72,7 @@ func (m *LogManager) Find(name string) Logger {
 // If a logger with the name already exists, it will be replaced.
 func (m *LogManager) Set(name string, logger Logger) {
 	m.mu.Lock()
-	defer func() { m.mu.Unlock() }()
+	defer m.mu.Unlock()
 
 	// Try to initialize the root node.
 	if m.nodes == nil {
@@ -112,7 +112,7 @@ func (m *LogManager) Set(name string, logger Logger) {
 // If the name does not exists, the function is no-op.
 func (m *LogManager) Delete(name string) {
 	m.mu.Lock()
-	defer func() { m.mu.Unlock() }()
+	defer m.mu.Unlock()
 
 	current, _ := m.doFind(name)
 	if current == nil {
