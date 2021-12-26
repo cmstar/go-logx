@@ -12,14 +12,21 @@ var DefaultManager *LogManager = NewManager()
 // It is safe for concurrent use.
 //
 // LogManager uses case-insensitive header matching when finding Loggers.
-// A name will be splitted by a dot(.) into several segments, when finding a name like 'A.B.C.D',
-// LogManager will firstly find 'a.b.c.d', if no logger found, LogManager will ignore the
-// last segment 'd' and continue with the heading segments 'a.b.c' and returns the logger if it exists.
-// If 'a.b.c' cannot be found, LogManager continues finding with 'a.b', and so on, finnally finding
-// with 'a', returns the first found logger instance, or nil if no logger is found.
+// A name will be splitted by the dot(.) into several segments, when finding a name like 'A.B.C.D',
+// LogManager finds the Logger in this order, returns the first found `Logger`:
+//   - a.b.c.d
+//   - a.b.c
+//   - a.b
+//   - a
+//   - "" (empty string)
 //
-// Specially, an empty string is a legal logger name and can be used as a segment of other names,
-// that is, a logger name can be '.A..b', which will be splitted into ['', 'a', '', 'b'].
+// If no logger can be found, LogManger.Find() returns nil.
+//
+// The logger with the empty name is the root logger. The empty string can be treated as the
+// first segment of all other names, e.g. The name 'a.b' is equivalent to '.a.b'.
+//
+// An empty string is a legal segment, that is, a logger name can be '.A..b',
+// which will be splitted into ['', 'a', '', 'b'].
 //
 type LogManager struct {
 	mu    sync.RWMutex // Manages locks.
@@ -27,9 +34,9 @@ type LogManager struct {
 }
 
 // loggerNode is a node in the tree that stores Loggers.
-// Each node stores a segment of a logger name. The root node stores no logger.
+// Each node stores a segment of a logger name. The root node's segment field is always the empty string.
 //
-// e.g., there are Loggers with name 'a.b', 'a.d', 'a.b.c', '.x.y', they will be stored in the tree like:
+// e.g., there are Loggers with name 'a.b', '.a.d', 'a.b.c', '.x.y', '..h', they will be stored in the tree like:
 //   root{ segment: '', logger: nil }
 //     |- node{ segment: 'a', logger: nil }
 //     |    |- node{ segment: 'b', logger: of('a.b') }
@@ -37,14 +44,18 @@ type LogManager struct {
 //     |    |
 //     |    |- node{ segment: 'd', logger: of('a.d') }
 //     |
+//     |- node{ segment: 'x', logger: nil }
+//     |    |- node{ segment: 'y', logger: of('x.y') }
+//     |
 //     |- node{ segment: '', logger: nil }
-//          |- node{ segment: 'x', logger: nil }
-//               |- node{ segment: 'y', logger: of('.x.y') }
+//          |- node{ segment: 'h', logger: of('.h') }
+//
+// Note: '.a.d' is equivalent to 'a.d'; '.x.y' is equivalent to 'x.y'; '..h' is equivalent to '.h'.
 //
 type loggerNode struct {
 	logger   Logger      // nil if this segment keeps no logger directly, thus loggers are kept on the children field.
 	segment  string      // The segment of the node.
-	parent   *loggerNode // Point to the parent node, nil if the current node is root.
+	parent   *loggerNode // Points to the parent node, nil if the current node is root.
 	children map[string]*loggerNode
 }
 
@@ -79,6 +90,11 @@ func (m *LogManager) Set(name string, logger Logger) {
 		m.nodes = new(loggerNode)
 	}
 
+	if name == "" {
+		m.nodes.logger = logger
+		return
+	}
+
 	var current, next *loggerNode
 	var hasChild bool
 	segments := m.splitName(name)
@@ -88,13 +104,15 @@ func (m *LogManager) Set(name string, logger Logger) {
 		seg := segments[i]
 
 		if current.children == nil {
-			current.children = make(map[string]*loggerNode)
 			hasChild = false
 		} else {
 			next, hasChild = current.children[seg]
 		}
 
 		if !hasChild {
+			if current.children == nil {
+				current.children = make(map[string]*loggerNode)
+			}
 			next = &loggerNode{
 				segment: seg,
 				parent:  current,
@@ -141,6 +159,10 @@ func (m *LogManager) doFind(name string) (current, lastNonNil *loggerNode) {
 		return nil, nil
 	}
 
+	if name == "" {
+		return m.nodes, m.nodes
+	}
+
 	var next *loggerNode
 	var hasChild bool
 	var i int
@@ -172,8 +194,12 @@ func (m *LogManager) doFind(name string) (current, lastNonNil *loggerNode) {
 }
 
 // splitName splits the given name by a dot(.) into a group of lowercase segments.
+// If the first segment is a empty string, it will be ignored.
 func (*LogManager) splitName(name string) []string {
 	name = strings.ToLower(name)
 	segments := strings.Split(name, ".")
+	if len(segments) > 1 && segments[0] == "" {
+		return segments[1:]
+	}
 	return segments
 }

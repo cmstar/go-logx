@@ -34,6 +34,10 @@ func TestLogManager(t *testing.T) {
 	checkLogger("a.x.y", logger1)
 	checkLogger("a.x.y.z", logger1)
 
+	// The heading dot is ignored.
+	checkLogger(".A", logger1)
+	checkLogger(".a.B", logger1)
+
 	checkLogger("A.b.c", logger2)
 	checkLogger("a.B.c.D", logger2)
 	checkLogger("a.B.c.D.e", logger2)
@@ -43,15 +47,14 @@ func TestLogManager(t *testing.T) {
 
 	checkLogger("", nil)
 	checkLogger("a2", nil)
-	checkLogger(".a", nil)
 	checkLogger("b", nil)
 
-	logger0 := NewStdLogger(nil)
-	m.Set("", logger0)
-	checkLogger("", logger0)
-	checkLogger(".a", logger0)
-	checkLogger(".a.b", logger0)
-	checkLogger("a2", nil)
+	root := NewStdLogger(nil)
+	m.Set("", root)
+	checkLogger("", root)
+	checkLogger(".a", root)
+	checkLogger(".a.b", root)
+	checkLogger("a2", root)
 
 	m.Delete("a.b.c")
 	checkLogger("A.b.c", logger1)
@@ -59,13 +62,13 @@ func TestLogManager(t *testing.T) {
 	checkLogger("a.B.c.D.e", logger1)
 
 	m.Delete("a")
-	checkLogger("a", nil)
-	checkLogger("a.B", nil)
+	checkLogger("a", root)
+	checkLogger("a.B", root)
 
 	// Check the data structure.
 	a := assert.New(t)
 	a.NotNil(m.nodes)
-	a.Equal(2, len(m.nodes.children))
+	a.Equal(1, len(m.nodes.children))
 	nodeA, ok := m.nodes.children["a"]
 	a.True(ok)
 	a.Nil(nodeA.logger)
@@ -82,9 +85,10 @@ func TestLogManager(t *testing.T) {
 	checkLogger("a.B.d", logger3)
 	checkLogger("a.b.d.e", logger3)
 
-	// Remove all logger.
+	// Remove all loggers.
 	m.Delete("")
 	m.Delete("a.b.d")
+	a.Nil(m.nodes.logger)
 	a.Equal(0, len(m.nodes.children))
 }
 
@@ -105,4 +109,13 @@ func TestLogManager_splitName(t *testing.T) {
 
 	got = m.splitName("a.Bb.cC.dd")
 	assert.Equal(t, []string{"a", "bb", "cc", "dd"}, got)
+
+	got = m.splitName(".a")
+	assert.Equal(t, []string{"a"}, got)
+
+	got = m.splitName(".")
+	assert.Equal(t, []string{""}, got)
+
+	got = m.splitName("..a..")
+	assert.Equal(t, []string{"", "a", "", ""}, got)
 }
