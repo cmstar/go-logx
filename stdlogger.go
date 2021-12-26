@@ -3,26 +3,27 @@ package logx
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 )
 
 // StdLogger sends all log messages to the UnderlyingLogger which is a Logger of the standard library.
-// If UnderlyingLogger is nil, log messages are sent to log.Default().
+// If UnderlyingLogger is nil, log messages are sent to os.Stderr.
 //
 // Log messages are formatted with fmt.Sprintf(), the message format is:
 //   LEVEL MESSAGE KEY1=VALUE1[ KEY2=VALUE2[ KYE3=VALUE3[...]]]
 //
 type StdLogger struct {
 	// UnderlyingLogger receives formatted log messages.
-	// If it is nil, log.Default() will be used.
+	// If it is nil, os.Stderr will be used as the Logger.
 	UnderlyingLogger *log.Logger
 
 	mu sync.Mutex
 }
 
 // NewStdLogger creates a new StdLogger with the given underlyingLogger, which is used to receive
-// log messages. If underlyingLogger is nil, log messages are sent to log.Default().
+// log messages. If underlyingLogger is nil, log messages are sent to os.Stderr.
 func NewStdLogger(underlyingLogger *log.Logger) Logger {
 	return &StdLogger{
 		UnderlyingLogger: underlyingLogger,
@@ -55,7 +56,7 @@ func (logger *StdLogger) Log(level Level, message string, keyValues ...interface
 
 	underlyingLogger := logger.UnderlyingLogger
 	if underlyingLogger == nil {
-		underlyingLogger = log.Default()
+		underlyingLogger = logger.createDefaultLogger()
 	}
 
 	line := builder.String()
@@ -66,4 +67,10 @@ func (logger *StdLogger) Log(level Level, message string, keyValues ...interface
 func (logger *StdLogger) LogFn(level Level, messageFactory func() (string, []interface{})) error {
 	message, keyValues := messageFactory()
 	return logger.Log(level, message, keyValues...)
+}
+
+func (*StdLogger) createDefaultLogger() *log.Logger {
+	// In Go 1.13, there's no log.Default() which is added in 1.16.
+	// To support 1.13, we use the underlying code instead.
+	return log.New(os.Stderr, "", log.LstdFlags)
 }
