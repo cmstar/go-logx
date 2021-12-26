@@ -12,7 +12,7 @@ This package only provides some logging abstraction. The purpose is to be used a
 
 The `Logger` interface has two methods:
 - `Log()`: writes a log message.
-- `LogFn()`: similar to `Log`, but accept a factory function to produce the log message.
+- `LogFn()`: similar to `Log`, but accepts a factory function to produce the log message.
 
 There are two built-in loggers:
 - `NopLogger`: an empty logger that logs nothing.
