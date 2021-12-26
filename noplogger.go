@@ -1,4 +1,4 @@
-package logging
+package logx
 
 // NopLogger is a no-op logger, the Log function do nothing and returns no error.
 // It is safe for concurrent use.

@@ -1,4 +1,4 @@
-package logging
+package logx
 
 // LogFinder defines methods for finding named loggers.
 // All methods should be safe for concurrent use.

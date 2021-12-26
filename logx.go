@@ -1,5 +1,5 @@
-// The logging package provides abstraction and some simple implementation of logging.
-package logging
+// The logx package provides abstraction and some simple implementation of logging.
+package logx
 
 import "strings"
 
