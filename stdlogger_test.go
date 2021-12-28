@@ -63,7 +63,9 @@ func TestStdLogger(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			buf.Reset()
 
-			err := stdLogger.Log(tt.args.level, tt.args.message, tt.args.keyValues...)
+			err := stdLogger.LogFn(tt.args.level, func() (message string, keyValues []interface{}) {
+				return tt.args.message, tt.args.keyValues
+			})
 			assert.NoError(t, err)
 
 			msg := buf.String()

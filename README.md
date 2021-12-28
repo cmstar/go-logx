@@ -2,6 +2,7 @@
 
 [![GoDoc](https://pkg.go.dev/badge/github.com/cmstar/go-logx)](https://pkg.go.dev/github.com/cmstar/go-logx)
 [![Go](https://github.com/cmstar/go-logx/workflows/Go/badge.svg)](https://github.com/cmstar/go-logx/actions?query=workflow%3AGo)
+[![codecov](https://codecov.io/gh/cmstar/go-logx/branch/master/graph/badge.svg)](https://codecov.io/gh/cmstar/go-logx)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat)](https://opensource.org/licenses/MIT)
 
 There are so many logging frameworks, it's not necessary to write a new one.
