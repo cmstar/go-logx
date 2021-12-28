@@ -29,8 +29,8 @@ var DefaultManager *LogManager = NewManager()
 // which will be splitted into ['', 'a', '', 'b'].
 //
 type LogManager struct {
-	mu    sync.RWMutex // Manages locks.
-	nodes *loggerNode  // The root node of the tree, whose logger field is always nil.
+	mu    sync.Mutex  // The lock for write operations.
+	nodes *loggerNode // The root node of the tree, whose logger field is always nil.
 }
 
 // loggerNode is a node in the tree that stores Loggers.
@@ -56,7 +56,8 @@ type loggerNode struct {
 	logger   Logger      // nil if this segment keeps no logger directly, thus loggers are kept on the children field.
 	segment  string      // The segment of the node.
 	parent   *loggerNode // Points to the parent node, nil if the current node is root.
-	children map[string]*loggerNode
+	children sync.Map    // The child nodes.
+	num      int         // The number of children. sync.Map does not have a Count() method so we count manually.
 }
 
 // NewManager creates a new instance of LogManager.
@@ -69,9 +70,6 @@ var _ LogFinder = (*LogManager)(nil)
 // Find returns the Logger instance with the specific name.
 // If the name cannot be found, returns nil.
 func (m *LogManager) Find(name string) Logger {
-	m.mu.RLock()
-	defer func() { m.mu.RUnlock() }()
-
 	_, lastNonNil := m.doFind(name)
 	if lastNonNil == nil {
 		return nil
@@ -95,7 +93,8 @@ func (m *LogManager) Set(name string, logger Logger) {
 		return
 	}
 
-	var current, next *loggerNode
+	var current *loggerNode
+	var next interface{}
 	var hasChild bool
 	segments := m.splitName(name)
 	current = m.nodes
@@ -103,24 +102,16 @@ func (m *LogManager) Set(name string, logger Logger) {
 	for i := 0; i < len(segments); i++ {
 		seg := segments[i]
 
-		if current.children == nil {
-			hasChild = false
-		} else {
-			next, hasChild = current.children[seg]
-		}
-
-		if !hasChild {
-			if current.children == nil {
-				current.children = make(map[string]*loggerNode)
-			}
+		if next, hasChild = current.children.Load(seg); !hasChild {
 			next = &loggerNode{
 				segment: seg,
 				parent:  current,
 			}
-			current.children[seg] = next
+			current.children.Store(seg, next)
+			current.num++
 		}
 
-		current = next
+		current = next.(*loggerNode)
 	}
 
 	current.logger = logger
@@ -142,54 +133,50 @@ func (m *LogManager) Delete(name string) {
 	// Try to purge the parent node if the node keeps no logger now.
 	// This action can be performed recursively.
 	for {
-		if current.parent == nil || len(current.children) > 0 {
+		if current.parent == nil || current.num != 0 {
 			break
 		}
 
-		delete(current.parent.children, current.segment)
+		current.parent.children.Delete(current.segment)
+		current.parent.num--
 		current = current.parent
 	}
 }
 
 // doFind performs finding on the logger tree.
 // @current is the node which keeps the logger of the given name, nil if @name cannot be located.
-// @lastNonNil is the nearest ancestor node of @current whose logger field is not nil.
+// @lastNonNil is the nearest ancestor node (can be @current) of @current whose logger field is not nil.
 func (m *LogManager) doFind(name string) (current, lastNonNil *loggerNode) {
 	if m.nodes == nil {
 		return nil, nil
 	}
 
+	current = m.nodes
 	if name == "" {
-		return m.nodes, m.nodes
+		return current, current
 	}
 
-	var next *loggerNode
-	var hasChild bool
-	var i int
 	segments := m.splitName(name)
-	current = m.nodes
 	lastNonNil = current
-
-	for i = 0; i < len(segments); i++ {
+	for i := 0; i < len(segments); i++ {
 		seg := segments[i]
 
-		if current.children == nil {
-			break
-		} else {
-			next, hasChild = current.children[seg]
-		}
-
+		v, hasChild := current.children.Load(seg)
 		if !hasChild {
+			current = nil
 			break
 		}
 
-		current = next
+		current = v.(*loggerNode)
 
 		if current.logger != nil {
 			lastNonNil = current
 		}
 	}
 
+	if lastNonNil.logger == nil {
+		lastNonNil = nil
+	}
 	return
 }
 

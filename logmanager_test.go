@@ -4,92 +4,123 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLogManager(t *testing.T) {
 	m := NewManager()
+	a := assert.New(t)
 
 	checkLogger := func(name string, want Logger) {
 		got := m.Find(name)
-		assert.Equal(t, want, got, "finding %v", name)
+		a.Equal(want, got, "finding %v", name)
 	}
 
 	checkLogger("a", nil)
 	m.Delete("") // No-op.
 
-	logger1 := NewStdLogger(nil)
-	m.Set("A", logger1)
+	type namedLogger struct {
+		Logger
+		name string
+	}
 
-	logger2 := NewStdLogger(nil)
-	m.Set("a.B.c", logger2)
+	loggerA := namedLogger{name: "a"}
+	m.Set("A", loggerA)
 
-	logger3 := NewStdLogger(nil)
-	m.Set("a.b.D", logger3)
+	loggerC1 := namedLogger{name: "a.b.c1"}
+	m.Set("a.B.c1", loggerC1)
 
-	checkLogger("a", logger1)
-	checkLogger("a.B", logger1)
-	checkLogger("a.B.x", logger1)
-	checkLogger("a.B.x.y", logger1)
-	checkLogger("a.x", logger1)
-	checkLogger("a.x.y", logger1)
-	checkLogger("a.x.y.z", logger1)
+	loggerC2 := namedLogger{name: "a.b.c2"}
+	m.Set("a.b.C2", loggerC2)
+
+	// Loggers: root, a, a.b.c1, a.b.c2
+	checkLogger("a", loggerA)
+	checkLogger("a.B", loggerA)
+	checkLogger("a.B.x", loggerA)
+	checkLogger("a.B.x.y", loggerA)
+	checkLogger("a.x", loggerA)
+	checkLogger("a.x.y", loggerA)
+	checkLogger("a.x.y.z", loggerA)
 
 	// The heading dot is ignored.
-	checkLogger(".A", logger1)
-	checkLogger(".a.B", logger1)
+	checkLogger(".A", loggerA)
+	checkLogger(".a.B", loggerA)
 
-	checkLogger("A.b.c", logger2)
-	checkLogger("a.B.c.D", logger2)
-	checkLogger("a.B.c.D.e", logger2)
+	checkLogger("A.b.c1", loggerC1)
+	checkLogger("a.B.c1.D", loggerC1)
+	checkLogger("a.B.c1.D.e", loggerC1)
 
-	checkLogger("a.B.d", logger3)
-	checkLogger("a.b.d.e", logger3)
+	checkLogger("a.B.C2", loggerC2)
+	checkLogger("a.b.c2.e", loggerC2)
 
 	checkLogger("", nil)
 	checkLogger("a2", nil)
 	checkLogger("b", nil)
 
-	root := NewStdLogger(nil)
+	root := namedLogger{name: ""}
 	m.Set("", root)
 	checkLogger("", root)
-	checkLogger(".a", root)
-	checkLogger(".a.b", root)
 	checkLogger("a2", root)
+	checkLogger(".a", loggerA)
+	checkLogger(".a.b", loggerA)
 
-	m.Delete("a.b.c")
-	checkLogger("A.b.c", logger1)
-	checkLogger("a.B.c.D", logger1)
-	checkLogger("a.B.c.D.e", logger1)
-
-	m.Delete("a")
+	m.Delete("a") // -> Loggers: root, a.b.c1, a.b.c2
 	checkLogger("a", root)
 	checkLogger("a.B", root)
+	checkLogger("a.b.c1", loggerC1)
+	checkLogger("a.b.c2", loggerC2)
+
+	loggerB := namedLogger{name: "b"}
+	m.Set("a.b", loggerB) // -> Loggers: root, a.b, a.b.c1, a.b.c2
+	checkLogger("a", root)
+	checkLogger("a.b", loggerB)
+	checkLogger("a.b.c1", loggerC1)
+	checkLogger("a.b.c2", loggerC2)
+
+	m.Delete("a")      // No-op.
+	m.Delete("a.b.x")  // No-op.
+	m.Delete("a.b.c1") // -> Loggers: root, a.b, a.b.c2
+	checkLogger("A.b.c1", loggerB)
+	checkLogger("a.B.c1.D", loggerB)
+	checkLogger("a.B.c1.D.e", loggerB)
+
+	m.Delete("") // -> Loggers: a.b, a.b.c2
+	checkLogger("a", nil)
+	checkLogger("a.b", loggerB)
+	checkLogger("a.b.x", loggerB)
+	checkLogger("a.B.c2", loggerC2)
+	checkLogger("a.b.c2.x", loggerC2)
 
 	// Check the data structure.
-	a := assert.New(t)
+	// Loggers: a.b, a.b.c2
 	a.NotNil(m.nodes)
-	a.Equal(1, len(m.nodes.children))
-	nodeA, ok := m.nodes.children["a"]
-	a.True(ok)
-	a.Nil(nodeA.logger)
-	a.Equal(1, len(nodeA.children))
-	nodeB, ok := nodeA.children["b"]
-	a.True(ok)
-	a.Nil(nodeB.logger)
-	a.Equal(1, len(nodeB.children))
-	nodeD, ok := nodeB.children["d"]
-	a.True(ok)
-	a.Equal(0, len(nodeD.children))
+	a.Nil(m.nodes.logger)
+	a.Equal(1, m.nodes.num)
 
-	// Make sure other loggers are there.
-	checkLogger("a.B.d", logger3)
-	checkLogger("a.b.d.e", logger3)
+	v, ok := m.nodes.children.Load("a")
+	require.True(t, ok)
+	nodeA := v.(*loggerNode)
+	a.Nil(nodeA.logger)
+	a.Equal(1, nodeA.num)
+
+	v, ok = nodeA.children.Load("b")
+	require.True(t, ok)
+	nodeB := v.(*loggerNode)
+	a.NotNil(nodeB.logger) // Logger 'a.b'.
+	a.Equal(1, nodeB.num)
+
+	v, ok = nodeB.children.Load("c2")
+	require.True(t, ok)
+	nodeC2 := v.(*loggerNode)
+	a.NotNil(nodeC2.logger) // Logger 'a.b.c2'.
+	a.Equal(0, nodeC2.num)
 
 	// Remove all loggers.
-	m.Delete("")
-	m.Delete("a.b.d")
-	a.Nil(m.nodes.logger)
-	a.Equal(0, len(m.nodes.children))
+	m.Delete("a.b.c2")
+	a.Equal(0, nodeB.num)
+
+	m.Delete("a.b")
+	a.Equal(0, m.nodes.num)
 }
 
 func TestLogManager_splitName(t *testing.T) {
