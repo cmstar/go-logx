@@ -21,6 +21,12 @@ There are two built-in loggers:
 
 For more details, see the [GoDoc](https://pkg.go.dev/github.com/cmstar/go-logx#Logger).
 
+## LoggerOp
+
+The `LoggerOp` struct provides a group of shortcut methods to simplify the usage of `Logger`, such as `Debug()`, `Infof()`, `Warnkv()`.
+
+For more details, see the [GoDoc](https://pkg.go.dev/github.com/cmstar/go-logx#example-LoggerOp).
+
 ## LogManager
 
 `LogManager` is used for managing `Logger`s. It's safe for concurrent use.
@@ -29,6 +35,7 @@ Methods:
 - `Set(name, Logger)`: register a logger with the given name into the `LogManager` instance.
 - `Find(name)`: get a logger with the given name.
 - `Delete(name)`: deleted a registered logger from the instance.
+- `Op()`: similar to `Find()`, but returns a `LoggerOp` instance.
 
 `LogManager` uses case-insensitive header matching when finding Loggers. A name will be splitted by the dot(.) into several segments, when finding a name like 'A.B.C.D', `LogManager` finds the `Logger` in this order, returns the first found `Logger`:
 - a.b.c.d

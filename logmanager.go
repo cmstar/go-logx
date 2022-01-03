@@ -77,6 +77,16 @@ func (m *LogManager) Find(name string) Logger {
 	return lastNonNil.logger
 }
 
+// Op uses Find() to get the logger  with the specific name, and wraps it with Op().
+// If the name cannot be found, returns nil.
+func (m *LogManager) Op(name string) *LoggerOp {
+	l := m.Find(name)
+	if l == nil {
+		return nil
+	}
+	return Op(l)
+}
+
 // Set registers a named logger to the current LogManager.
 // If a logger with the name already exists, it will be replaced.
 func (m *LogManager) Set(name string, logger Logger) {

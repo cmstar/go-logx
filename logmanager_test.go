@@ -123,6 +123,17 @@ func TestLogManager(t *testing.T) {
 	a.Equal(0, m.nodes.num)
 }
 
+func TestLogManager_Op(t *testing.T) {
+	m := NewManager()
+	assert.Nil(t, m.Op("x"))
+
+	l := NewStdLogger(nil)
+	m.Set("name", l)
+	op := m.Op("name")
+	assert.NotNil(t, op)
+	assert.Equal(t, l, op.Logger)
+}
+
 func TestLogManager_splitName(t *testing.T) {
 	var m *LogManager
 
