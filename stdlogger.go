@@ -30,6 +30,7 @@ func NewStdLogger(underlyingLogger *log.Logger) Logger {
 	}
 }
 
+// Log implements Logger.Log().
 func (logger *StdLogger) Log(level Level, message string, keyValues ...interface{}) error {
 	logger.mu.Lock()
 	defer logger.mu.Unlock()
@@ -64,6 +65,7 @@ func (logger *StdLogger) Log(level Level, message string, keyValues ...interface
 	return nil
 }
 
+// LogFn implements Logger.LogFn().
 func (logger *StdLogger) LogFn(level Level, messageFactory func() (string, []interface{})) error {
 	message, keyValues := messageFactory()
 	return logger.Log(level, message, keyValues...)
