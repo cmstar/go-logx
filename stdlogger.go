@@ -3,7 +3,6 @@ package logx
 import (
 	"fmt"
 	"log"
-	"os"
 	"strings"
 	"sync"
 )
@@ -57,7 +56,7 @@ func (logger *StdLogger) Log(level Level, message string, keyValues ...interface
 
 	underlyingLogger := logger.UnderlyingLogger
 	if underlyingLogger == nil {
-		underlyingLogger = logger.createDefaultLogger()
+		underlyingLogger = log.Default()
 	}
 
 	line := builder.String()
@@ -69,10 +68,4 @@ func (logger *StdLogger) Log(level Level, message string, keyValues ...interface
 func (logger *StdLogger) LogFn(level Level, messageFactory func() (string, []interface{})) error {
 	message, keyValues := messageFactory()
 	return logger.Log(level, message, keyValues...)
-}
-
-func (*StdLogger) createDefaultLogger() *log.Logger {
-	// In Go 1.13, there's no log.Default() which is added in 1.16.
-	// To support 1.13, we use the underlying code instead.
-	return log.New(os.Stderr, "", log.LstdFlags)
 }
