@@ -9,7 +9,11 @@ type LoggerOp struct {
 }
 
 // Op returns a LoggerOp which wraps the given Logger.
+// If the given logger is nil, the LoggerOp will use a NopLogger.
 func Op(logger Logger) *LoggerOp {
+	if logger == nil {
+		logger = NopLogger
+	}
 	return &LoggerOp{logger}
 }
 

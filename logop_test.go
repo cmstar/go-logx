@@ -52,3 +52,8 @@ FATAL  k1=51 k2=52
 `
 	assert.Equal(t, want, got)
 }
+
+func TestLoggerOp_withNilLogger(t *testing.T) {
+	op := Op(nil)
+	op.Debug("")
+}
