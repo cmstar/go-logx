@@ -22,7 +22,11 @@ type StdLogger struct {
 }
 
 // NewStdLogger creates a new StdLogger with the given underlyingLogger, which is used to receive
-// log messages. If underlyingLogger is nil, log messages are sent to os.Stderr.
+// log messages. If underlyingLogger is nil, log messages are sent to log.Default() which uses os.Stderr.
+//
+// The following code uses a underlying logger which sends messages to os.Stdin:
+//   logger := logx.NewStdLogger(log.New(os.Stdin, "", log.LstdFlags))
+//
 func NewStdLogger(underlyingLogger *log.Logger) Logger {
 	return &StdLogger{
 		UnderlyingLogger: underlyingLogger,
