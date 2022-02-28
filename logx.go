@@ -1,18 +1,21 @@
 // Package logx provides abstraction and some simple implementation of logging.
 package logx
 
-import "strings"
+import (
+	"strings"
+)
 
 // Level defines the log level.
-// If level A is lower than B, the interger value of A should be less than B.
+// If level A is lower than B, the integer value of A should be less than B.
 type Level int8
 
+// Levels can be a bitmap mask.
 const (
-	LevelDebug Level = iota // LevelDebug is the debug level.
-	LevelInfo               // LevelInfo is the info level.
-	LevelWarn               // LevelWarn is the warn level.
-	LevelError              // LevelError is the error level.
-	LevelFatal              // LevelFatal is the fatal level.
+	LevelDebug Level = 1 << iota // LevelDebug is the debug level.
+	LevelInfo                    // LevelInfo is the info level.
+	LevelWarn                    // LevelWarn is the warn level.
+	LevelError                   // LevelError is the error level.
+	LevelFatal                   // LevelFatal is the fatal level.
 )
 
 // ParseLevel parses the given string to the corresponding Level.
