@@ -1,17 +1,16 @@
-package logx
+package logx_test
 
 import (
-	"bytes"
-	"log"
 	"testing"
 
+	"github.com/cmstar/go-logx"
+	"github.com/cmstar/go-logx/logxtest"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLoggerOp(t *testing.T) {
-	buf := new(bytes.Buffer)
-	underlyingLogger := log.New(buf, "", 0)
-	op := Op(NewStdLogger(underlyingLogger))
+	r := logxtest.NewRecorder()
+	op := logx.Op(r)
 
 	op.Debug("Debug msg")
 	op.Debugf("Debug %v", 1)
@@ -33,7 +32,6 @@ func TestLoggerOp(t *testing.T) {
 	op.Fatalf("Fatal %v", 5)
 	op.Fatalkv("k1", 51, "k2", 52)
 
-	got := buf.String()
 	want := `DEBUG Debug msg
 DEBUG Debug 1
 DEBUG  k1=11 k2=12
@@ -50,10 +48,10 @@ FATAL Fatal msg
 FATAL Fatal 5
 FATAL  k1=51 k2=52
 `
-	assert.Equal(t, want, got)
+	assert.Equal(t, want, r.String())
 }
 
 func TestLoggerOp_withNilLogger(t *testing.T) {
-	op := Op(nil)
+	op := logx.Op(nil)
 	op.Debug("")
 }
