@@ -3,26 +3,27 @@ package logx
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 )
 
 // StdLogger sends all log messages to the UnderlyingLogger which is a Logger of the standard library.
-// If UnderlyingLogger is nil, log messages are sent to os.Stderr.
+// If UnderlyingLogger is nil, log messages are sent to os.Stdout.
 //
 // Log messages are formatted with fmt.Sprintf(), the message format is:
 //   LEVEL MESSAGE KEY1=VALUE1[ KEY2=VALUE2[ KYE3=VALUE3[...]]]
 //
 type StdLogger struct {
 	// UnderlyingLogger receives formatted log messages.
-	// If it is nil, os.Stderr will be used as the Logger.
+	// If it is nil, os.Stdout will be used as the Logger.
 	UnderlyingLogger *log.Logger
 
 	mu sync.Mutex
 }
 
 // NewStdLogger creates a new StdLogger with the given underlyingLogger, which is used to receive
-// log messages. If underlyingLogger is nil, log messages are sent to log.Default() which uses os.Stderr.
+// log messages. If underlyingLogger is nil, log messages are sent to os.Stdout.
 //
 // The following code uses a underlying logger which sends messages to os.Stdin:
 //   logger := logx.NewStdLogger(log.New(os.Stdin, "", log.LstdFlags))
@@ -60,7 +61,7 @@ func (logger *StdLogger) Log(level Level, message string, keyValues ...interface
 
 	underlyingLogger := logger.UnderlyingLogger
 	if underlyingLogger == nil {
-		underlyingLogger = log.Default()
+		underlyingLogger = log.New(os.Stdout, "", log.LstdFlags)
 	}
 
 	line := builder.String()
