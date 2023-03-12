@@ -12,7 +12,7 @@ var DefaultManager *LogManager = NewManager()
 // It is safe for concurrent use.
 //
 // LogManager uses case-insensitive header matching when finding Loggers.
-// A name will be splitted by the dot(.) into several segments, when finding a name like 'A.B.C.D',
+// A name will be split by the dot(.) into several segments, when finding a name like 'A.B.C.D',
 // LogManager finds the Logger in this order, returns the first found `Logger`:
 //   - a.b.c.d
 //   - a.b.c
@@ -26,8 +26,7 @@ var DefaultManager *LogManager = NewManager()
 // first segment of all other names, e.g. The name 'a.b' is equivalent to '.a.b'.
 //
 // An empty string is a legal segment, that is, a logger name can be '.A..b',
-// which will be splitted into ['', 'a', '', 'b'].
-//
+// which will be split into [”, 'a', ”, 'b'].
 type LogManager struct {
 	mu    sync.Mutex  // The lock for write operations.
 	nodes *loggerNode // The root node of the tree, whose logger field is always nil.
@@ -37,21 +36,21 @@ type LogManager struct {
 // Each node stores a segment of a logger name. The root node's segment field is always the empty string.
 //
 // e.g., there are Loggers with name 'a.b', '.a.d', 'a.b.c', '.x.y', '..h', they will be stored in the tree like:
-//   root{ segment: '', logger: nil }
-//     |- node{ segment: 'a', logger: nil }
-//     |    |- node{ segment: 'b', logger: of('a.b') }
-//     |    |    |- node{ segment: 'c', logger: of('a.b.c') }
-//     |    |
-//     |    |- node{ segment: 'd', logger: of('a.d') }
-//     |
-//     |- node{ segment: 'x', logger: nil }
-//     |    |- node{ segment: 'y', logger: of('x.y') }
-//     |
-//     |- node{ segment: '', logger: nil }
-//          |- node{ segment: 'h', logger: of('.h') }
+//
+//	root{ segment: '', logger: nil }
+//	  |- node{ segment: 'a', logger: nil }
+//	  |    |- node{ segment: 'b', logger: of('a.b') }
+//	  |    |    |- node{ segment: 'c', logger: of('a.b.c') }
+//	  |    |
+//	  |    |- node{ segment: 'd', logger: of('a.d') }
+//	  |
+//	  |- node{ segment: 'x', logger: nil }
+//	  |    |- node{ segment: 'y', logger: of('x.y') }
+//	  |
+//	  |- node{ segment: '', logger: nil }
+//	       |- node{ segment: 'h', logger: of('.h') }
 //
 // Note: '.a.d' is equivalent to 'a.d'; '.x.y' is equivalent to 'x.y'; '..h' is equivalent to '.h'.
-//
 type loggerNode struct {
 	logger   Logger      // nil if this segment keeps no logger directly, thus loggers are kept on the children field.
 	segment  string      // The segment of the node.

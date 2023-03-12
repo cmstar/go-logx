@@ -70,7 +70,7 @@ type Logger interface {
 	//
 	Log(level Level, message string, keyValues ...interface{}) error
 
-	// LogFn is similar to the Log function, but generates the log mesage with a function.
+	// LogFn is similar to the Log function, but generates the log message with a function.
 	// It is useful when the generation of log messages is expensive.
 	//
 	// If messageFactory panics, it will not be handled.

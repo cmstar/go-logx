@@ -37,7 +37,7 @@ Methods:
 - `Delete(name)`: deleted a registered logger from the instance.
 - `Op()`: similar to `Find()`, but returns a `LoggerOp` instance.
 
-`LogManager` uses case-insensitive header matching when finding Loggers. A name will be splitted by the dot(.) into several segments, when finding a name like 'A.B.C.D', `LogManager` finds the `Logger` in this order, returns the first found `Logger`:
+`LogManager` uses case-insensitive header matching when finding Loggers. A name will be split by the dot(.) into several segments, when finding a name like 'A.B.C.D', `LogManager` finds the `Logger` in this order, returns the first found `Logger`:
 - a.b.c.d
 - a.b.c
 - a.b
