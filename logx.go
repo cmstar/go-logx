@@ -18,6 +18,21 @@ const (
 	LevelFatal                   // LevelFatal is the fatal level.
 )
 
+// Combined levels.
+const (
+	// LevelBeyondError combines LevelFatal, LevelError.
+	LevelBeyondError = LevelError | LevelFatal
+
+	// LevelBeyondError combines LevelFatal, LevelError, LevelWarn.
+	LevelBeyondWarn = LevelWarn | LevelBeyondError
+
+	// LevelBeyondError combines LevelFatal, LevelError, LevelWarn, LevelInfo.
+	LevelBeyondInfo = LevelInfo | LevelBeyondWarn
+
+	// LevelBeyondError combines LevelFatal, LevelError, LevelWarn, LevelInfo, LevelDebug.
+	LevelBeyondDebug = LevelDebug | LevelBeyondInfo
+)
+
 // ParseLevel parses the given string to the corresponding Level.
 // Returns -1 if the value cannot be parsed.
 func ParseLevel(v string) Level {
@@ -38,22 +53,44 @@ func ParseLevel(v string) Level {
 }
 
 // LevelToString returns the string representation of Level.
+//
 // The string is in uppercase like DEBUG, INFO, WARN, ERROR, FATAL.
+// Combined levels are split by '|', e.g. DEBUG|INFO|ERROR .
+//
 // If the given level is not defined, returns UNKNOWN.
 func LevelToString(lv Level) string {
-	switch lv {
-	case LevelDebug:
-		return "DEBUG"
-	case LevelInfo:
-		return "INFO"
-	case LevelWarn:
-		return "WARN"
-	case LevelError:
-		return "ERROR"
-	case LevelFatal:
-		return "FATAL"
+	res := ""
+	a := func(s string) {
+		if len(res) > 0 {
+			res += "|"
+		}
+		res += s
 	}
-	return "UNKNOWN"
+
+	if (lv & LevelDebug) == LevelDebug {
+		a("DEBUG")
+	}
+
+	if (lv & LevelInfo) == LevelInfo {
+		a("INFO")
+	}
+
+	if (lv & LevelWarn) == LevelWarn {
+		a("WARN")
+	}
+
+	if (lv & LevelError) == LevelError {
+		a("ERROR")
+	}
+
+	if (lv & LevelFatal) == LevelFatal {
+		a("FATAL")
+	}
+
+	if len(res) == 0 {
+		return "UNKNOWN"
+	}
+	return res
 }
 
 // Logger defines the logging action.

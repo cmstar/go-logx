@@ -23,5 +23,10 @@ func TestLevelToString(t *testing.T) {
 	a.Equal("WARN", LevelToString(LevelWarn))
 	a.Equal("ERROR", LevelToString(LevelError))
 	a.Equal("FATAL", LevelToString(LevelFatal))
-	a.Equal("UNKNOWN", LevelToString(Level(100)))
+	a.Equal("UNKNOWN", LevelToString(LevelFatal<<1))
+
+	a.Equal("ERROR|FATAL", LevelToString(LevelBeyondError))
+	a.Equal("WARN|ERROR|FATAL", LevelToString(LevelBeyondWarn))
+	a.Equal("INFO|WARN|ERROR|FATAL", LevelToString(LevelBeyondInfo))
+	a.Equal("DEBUG|INFO|WARN|ERROR|FATAL", LevelToString(LevelBeyondDebug))
 }
