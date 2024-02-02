@@ -2,6 +2,7 @@
 package logx
 
 import (
+	"fmt"
 	"strings"
 )
 
@@ -17,6 +18,14 @@ const (
 	LevelError                   // LevelError is the error level.
 	LevelFatal                   // LevelFatal is the fatal level.
 )
+
+var _ fmt.Stringer = Level(0)
+
+// String returns the string representation of Level.
+// It's equivalent to LevelToString(v).
+func (v Level) String() string {
+	return LevelToString(v)
+}
 
 // Combined levels.
 const (

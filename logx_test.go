@@ -6,6 +6,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLevel_String(t *testing.T) {
+	a := assert.New(t)
+	a.Equal("DEBUG", LevelDebug.String())
+	a.Equal("INFO", LevelInfo.String())
+	a.Equal("WARN", LevelWarn.String())
+	a.Equal("ERROR", LevelError.String())
+	a.Equal("FATAL", LevelFatal.String())
+	a.Equal("DEBUG|FATAL", (LevelDebug | LevelFatal).String())
+}
+
 func TestParseLevel(t *testing.T) {
 	a := assert.New(t)
 	a.Equal(LevelDebug, ParseLevel("debug"))
